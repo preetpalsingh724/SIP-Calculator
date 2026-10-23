@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-950 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced SIP vs. Lumpsum Financial Analytics Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            400: '#34d399',
+                            500: '#10b981',
+                            600: '#059669',
+                            700: '#047857',
+                        },
+                        accent: {
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                        },
+                        inflation: {
+                            400: '#f87171',
+                            500: '#ef4444',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom range slider styling with track fill logic */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            background: #10b981;
+            cursor: pointer;
+            margin-top: -7px;
+            box-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+            transition: transform 0.15s ease, background-color 0.2s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+            background: #34d399;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 6px;
+            cursor: pointer;
+            border-radius: 9999px;
+            background: #1e293b;
+        }
+        /* Custom input hide arrows */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+    </style>
+</head>
+<body class="min-h-full font-sans antialiased flex flex-col justify-between selection:bg-brand-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-500 via-emerald-500 to-accent-500 flex items-center justify-center shadow-lg shadow-brand-500/20">
+                    <i class="fa-solid fa-chart-pie text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent">WealthCraft Pro</h1>
+                    <p class="text-xs text-slate-400 font-medium hidden sm:block">SIP vs. Lumpsum & Inflation Analytics</p>
+                </div>
+            </div>
+            
+            <!-- Strategy Mode Switcher -->
+            <div class="flex items-center space-x-1.5 bg-slate-950 p-1 rounded-xl border border-slate-800">
+                <button id="mode-sip" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/20 flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrows-rotate text-[10px]"></i> SIP Mode
+                </button>
+                <button id="mode-lumpsum" class="px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-400 hover:text-white flex items-center gap-1.5">
+                    <i class="fa-solid fa-sack-dollar text-[10px]"></i> Lumpsum Mode
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full flex-grow space-y-8">
+        
+        <!-- Top Strategic Comparison Banner -->
+        <div id="recommendation-card" class="rounded-2xl p-6 bg-slate-900/80 border border-slate-800 shadow-2xl relative overflow-hidden transition-all duration-300">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+                <div class="flex items-start gap-4">
+                    <div id="rec-icon-bg" class="w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center flex-shrink-0">
+                        <i id="rec-icon" class="fa-solid fa-bolt text-brand-400 text-xl"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-semibold uppercase tracking-wider text-slate-400">Strategy Decision Engine</span>
+                            <span id="rec-badge" class="px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-brand-500/20 text-brand-400 border border-brand-500/30">Lumpsum Wins</span>
+                        </div>
+                        <h2 id="rec-headline" class="text-lg font-bold text-white mt-0.5">Lumpsum generates ₹12,40,000 more inflation-adjusted real wealth.</h2>
+                        <p id="rec-description" class="text-xs text-slate-400 mt-1 max-w-3xl">
+                            Because capital is deployed on Day 1, Lumpsum maximizes compound growth over the entire time horizon compared to gradual SIP installments.
+                        </p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 bg-slate-950/60 p-3.5 rounded-xl border border-slate-800/80 self-stretch md:self-auto justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase block">Real Gain Edge</span>
+                        <span id="rec-profit-margin" class="text-lg font-extrabold text-brand-400">+42.5%</span>
+                    </div>
+                    <div class="h-8 w-px bg-slate-800"></div>
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase block">Real Net Difference</span>
+                        <span id="rec-diff-amount" class="text-lg font-extrabold text-white">₹12.4 Lakhs</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Side: Interactive Inputs Slider Box -->
+            <div class="lg:col-span-6 bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 sm:p-8 shadow-2xl space-y-7">
+                
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-sliders text-brand-400 text-sm"></i>
+                            <span id="calc-title">Systematic Investment Plan</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" id="calc-subtitle">Adjust variables to calculate growth and inflation impact</p>
+                    </div>
+                    <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20" id="badge-mode">
+                        SIP Active
+                    </span>
+                </div>
+
+                <!-- Input 1: Amount -->
+                <div class="space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <label for="amount-input" class="text-xs font-bold uppercase tracking-wider text-slate-300" id="amount-label">
+                            Monthly SIP Amount
+                        </label>
+                        <div class="relative flex items-center">
+                            <span class="absolute left-3 text-slate-400 font-semibold text-sm">₹</span>
+                            <input 
+                                type="number" 
+                                id="amount-input" 
+                                class="w-36 sm:w-44 bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-7 pr-3 text-right text-brand-400 font-extrabold text-base focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition-all"
+                            />
+                        </div>
+                    </div>
+                    <div class="relative flex items-center">
+                        <input 
+                            type="range" 
+                            id="amount-slider" 
+                            min="500" 
+                            max="500000" 
+                            step="500" 
+                            value="25000"
+                            class="w-full h-2 rounded-lg cursor-pointer"
+                        />
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-500 font-semibold">
+                        <span id="min-amount-label">₹500</span>
+                        <span id="max-amount-label">₹5 Lakhs</span>
+                    </div>
+                </div>
+
+                <!-- Input 2: Expected Return Rate -->
+                <div class="space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <label for="rate-input" class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                            Expected Annual Return (p.a)
+                        </label>
+                        <div class="relative flex items-center">
+                            <input 
+                                type="number" 
+                                id="rate-input" 
+                                step="0.1" 
+                                min="1" 
+                                max="30" 
+                                value="12"
+                                class="w-28 bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-3 pr-7 text-right text-indigo-400 font-extrabold text-base focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            />
+                            <span class="absolute right-3 text-slate-400 font-semibold text-sm">%</span>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center">
+                        <input 
+                            type="range" 
+                            id="rate-slider" 
+                            min="1" 
+                            max="30" 
+                            step="0.1" 
+                            value="12"
+                            class="w-full h-2 rounded-lg cursor-pointer"
+                        />
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-500 font-semibold">
+                        <span>1%</span>
+                        <span>30%</span>
+                    </div>
+                </div>
+
+                <!-- Input 3: Time Horizon -->
+                <div class="space-y-2.5">
+                    <div class="flex justify-between items-center">
+                        <label for="years-input" class="text-xs font-bold uppercase tracking-wider text-slate-300">
+                            Investment Horizon
+                        </label>
+                        <div class="relative flex items-center">
+                            <input 
+                                type="number" 
+                                id="years-input" 
+                                min="1" 
+                                max="40" 
+                                value="15"
+                                class="w-28 bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-3 pr-10 text-right text-purple-400 font-extrabold text-base focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all"
+                            />
+                            <span class="absolute right-3 text-slate-400 font-semibold text-xs">Yr(s)</span>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center">
+                        <input 
+                            type="range" 
+                            id="years-slider" 
+                            min="1" 
+                            max="40" 
+                            step="1" 
+                            value="15"
+                            class="w-full h-2 rounded-lg cursor-pointer"
+                        />
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-500 font-semibold">
+                        <span>1 Year</span>
+                        <span>40 Years</span>
+                    </div>
+                </div>
+
+                <!-- Input 4: Inflation Rate [NEW FEATURE] -->
+                <div class="space-y-2.5 pt-2 border-t border-slate-800/80">
+                    <div class="flex justify-between items-center">
+                        <label for="inflation-input" class="text-xs font-bold uppercase tracking-wider text-red-400 flex items-center gap-1.5">
+                            <i class="fa-solid fa-arrow-trend-up"></i> Annual Inflation Rate
+                        </label>
+                        <div class="relative flex items-center">
+                            <input 
+                                type="number" 
+                                id="inflation-input" 
+                                step="0.1" 
+                                min="0" 
+                                max="15" 
+                                value="6"
+                                class="w-28 bg-slate-950 border border-slate-800 rounded-xl py-1.5 pl-3 pr-7 text-right text-red-400 font-extrabold text-base focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all"
+                            />
+                            <span class="absolute right-3 text-slate-400 font-semibold text-sm">%</span>
+                        </div>
+                    </div>
+                    <div class="relative flex items-center">
+                        <input 
+                            type="range" 
+                            id="inflation-slider" 
+                            min="0" 
+                            max="15" 
+                            step="0.1" 
+                            value="6"
+                            class="w-full h-2 rounded-lg cursor-pointer"
+                        />
+                    </div>
+                    <div class="flex justify-between text-[11px] text-slate-500 font-semibold">
+                        <span>0% (No Inflation)</span>
+                        <span>15%</span>
+                    </div>
+                </div>
+
+                <!-- Presets -->
+                <div class="pt-3 border-t border-slate-800">
+                    <label class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-2">Duration Presets</label>
+                    <div class="flex flex-wrap gap-2">
+                        <button class="preset-year px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-brand-500 hover:text-white transition-all" data-years="5">5 Yrs</button>
+                        <button class="preset-year px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-brand-500 hover:text-white transition-all" data-years="10">10 Yrs</button>
+                        <button class="preset-year px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-brand-500 hover:text-white transition-all" data-years="15">15 Yrs</button>
+                        <button class="preset-year px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-brand-500 hover:text-white transition-all" data-years="20">20 Yrs</button>
+                        <button class="preset-year px-3 py-1 rounded-lg bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-300 hover:border-brand-500 hover:text-white transition-all" data-years="25">25 Yrs</button>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Right Side: Analytics, Metrics & Visualizations -->
+            <div class="lg:col-span-6 space-y-6">
+                
+                <!-- Financial Metrics Grid -->
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+                    <h3 class="text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800 pb-3 flex items-center justify-between">
+                        <span>Financial Metrics Breakdown</span>
+                        <span class="text-[10px] text-slate-500 normal-case font-normal">Adjusted for Inflation Impact</span>
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 gap-3">
+                        <!-- Total Invested -->
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                            <span class="text-[11px] font-semibold text-slate-400 block mb-0.5">Total Outlay</span>
+                            <span id="metric-invested" class="text-base sm:text-lg font-bold text-white">₹45,00,000</span>
+                        </div>
+
+                        <!-- Nominal Future Wealth -->
+                        <div class="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                            <span class="text-[11px] font-semibold text-slate-400 block mb-0.5">Nominal Wealth</span>
+                            <span id="metric-nominal" class="text-base sm:text-lg font-bold text-slate-200">₹1,25,00,000</span>
+                        </div>
+
+                        <!-- Inflation Loss -->
+                        <div class="p-3.5 rounded-xl bg-red-500/5 border border-red-500/20">
+                            <span class="text-[11px] font-semibold text-red-400 block mb-0.5 flex items-center gap-1">
+                                <i class="fa-solid fa-fire-flame-curved text-[10px]"></i> Inflation Erosion
+                            </span>
+                            <span id="metric-erosion" class="text-base sm:text-lg font-bold text-red-400">-₹72,80,000</span>
+                        </div>
+
+                        <!-- Real Purchasing Power Value -->
+                        <div class="p-3.5 rounded-xl bg-brand-500/10 border border-brand-500/30">
+                            <span class="text-[11px] font-semibold text-brand-400 block mb-0.5 flex items-center gap-1">
+                                <i class="fa-solid fa-shield-halved text-[10px]"></i> Real Purchasing Power
+                            </span>
+                            <span id="metric-real" class="text-base sm:text-lg font-bold text-brand-400">₹52,20,000</span>
+                        </div>
+                    </div>
+
+                    <!-- Side-by-side Strategy Quick Match -->
+                    <div class="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                        <div class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Strategy Comparison (Real Wealth)</div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-arrows-rotate text-brand-400"></i> SIP Strategy Real Value:</span>
+                            <span id="comp-sip-real" class="font-bold text-white">₹52,20,000</span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden flex">
+                            <div id="bar-sip-share" class="bg-brand-500 h-full" style="width: 50%"></div>
+                            <div id="bar-lumpsum-share" class="bg-accent-500 h-full" style="width: 50%"></div>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-400 flex items-center gap-1.5"><i class="fa-solid fa-sack-dollar text-accent-400"></i> Lumpsum Strategy Real Value:</span>
+                            <span id="comp-lumpsum-real" class="font-bold text-white">₹64,60,000</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Visualizations Tabs & Canvas -->
+                <div class="bg-slate-900/60 backdrop-blur-xl border border-slate-800 rounded-2xl p-6 shadow-2xl space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-400">Visual Insights</h4>
+                        <div class="flex space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                            <button id="chart-tab-doughnut" class="px-2.5 py-1 rounded text-[11px] font-bold text-white bg-slate-800">Decomposition</button>
+                            <button id="chart-tab-growth" class="px-2.5 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white">Growth Curve</button>
+                        </div>
+                    </div>
+
+                    <!-- Doughnut Breakdown View -->
+                    <div id="view-doughnut" class="flex flex-col sm:flex-row items-center justify-around gap-4 py-2">
+                        <div class="relative w-48 h-48 flex-shrink-0">
+                            <canvas id="breakdownChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-[10px] font-semibold text-slate-400 uppercase">Real Yield</span>
+                                <span id="chart-real-ratio" class="text-lg font-extrabold text-white">41.8%</span>
+                            </div>
+                        </div>
+                        <div class="space-y-2 text-xs font-medium w-full sm:w-auto">
+                            <div class="flex items-center justify-between sm:justify-start gap-3">
+                                <span class="w-3 h-3 rounded-full bg-slate-500"></span>
+                                <span class="text-slate-400">Invested Capital:</span>
+                                <span id="legend-invested" class="font-bold text-white">₹45.0L</span>
+                            </div>
+                            <div class="flex items-center justify-between sm:justify-start gap-3">
+                                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                                <span class="text-slate-400">Real Gain:</span>
+                                <span id="legend-real-gain" class="font-bold text-brand-400">₹7.2L</span>
+                            </div>
+                            <div class="flex items-center justify-between sm:justify-start gap-3">
+                                <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                                <span class="text-slate-400">Inflation Erosion:</span>
+                                <span id="legend-erosion" class="font-bold text-red-400">₹72.8L</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Multi-line Growth Projection View (Hidden initially) -->
+                    <div id="view-growth" class="hidden relative h-52 w-full">
+                        <canvas id="growthChart"></canvas>
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-6 text-center text-xs text-slate-500 bg-slate-950">
+        <p>Built for precise financial modeling. Real wealth calculations use standard present-value formula $Real = FV / (1 + i)^n$.</p>
+    </footer>
+
+    <!-- Logic Engine -->
+    <script>
+        // State
+        let isSIP = true;
+        let breakdownChart = null;
+        let growthChart = null;
+
+        // DOM Inputs
+        const modeSipBtn = document.getElementById('mode-sip');
+        const modeLumpsumBtn = document.getElementById('mode-lumpsum');
+        
+        const calcTitle = document.getElementById('calc-title');
+        const calcSubtitle = document.getElementById('calc-subtitle');
+        const badgeMode = document.getElementById('badge-mode');
+        const amountLabel = document.getElementById('amount-label');
+        const minAmountLabel = document.getElementById('min-amount-label');
+        const maxAmountLabel = document.getElementById('max-amount-label');
+
+        const amountInput = document.getElementById('amount-input');
+        const amountSlider = document.getElementById('amount-slider');
+        
+        const rateInput = document.getElementById('rate-input');
+        const rateSlider = document.getElementById('rate-slider');
+        
+        const yearsInput = document.getElementById('years-input');
+        const yearsSlider = document.getElementById('years-slider');
+
+        const inflationInput = document.getElementById('inflation-input');
+        const inflationSlider = document.getElementById('inflation-slider');
+
+        // DOM Outputs
+        const metricInvested = document.getElementById('metric-invested');
+        const metricNominal = document.getElementById('metric-nominal');
+        const metricErosion = document.getElementById('metric-erosion');
+        const metricReal = document.getElementById('metric-real');
+
+        const compSipReal = document.getElementById('comp-sip-real');
+        const compLumpsumReal = document.getElementById('comp-lumpsum-real');
+        const barSipShare = document.getElementById('bar-sip-share');
+        const barLumpsumShare = document.getElementById('bar-lumpsum-share');
+
+        const recHeadline = document.getElementById('rec-headline');
+        const recDescription = document.getElementById('rec-description');
+        const recProfitMargin = document.getElementById('rec-profit-margin');
+        const recDiffAmount = document.getElementById('rec-diff-amount');
+        const recBadge = document.getElementById('rec-badge');
+        const recIcon = document.getElementById('rec-icon');
+        const recIconBg = document.getElementById('rec-icon-bg');
+
+        const chartRealRatio = document.getElementById('chart-real-ratio');
+        const legendInvested = document.getElementById('legend-invested');
+        const legendRealGain = document.getElementById('legend-real-gain');
+        const legendErosion = document.getElementById('legend-erosion');
+
+        const chartTabDoughnut = document.getElementById('chart-tab-doughnut');
+        const chartTabGrowth = document.getElementById('chart-tab-growth');
+        const viewDoughnut = document.getElementById('view-doughnut');
+        const viewGrowth = document.getElementById('view-growth');
+
+        // Helper: Format Currency (INR)
+        function formatINR(val) {
+            return new Intl.NumberFormat('en-IN', {
+                style: 'currency',
+                currency: 'INR',
+                maximumFractionDigits: 0
+            }).format(Math.round(val));
+        }
+
+        function formatCompactINR(val) {
+            if (val >= 10000000) return (val / 10000000).toFixed(2) + ' Cr';
+            if (val >= 100000) return (val / 100000).toFixed(2) + ' Lakhs';
+            return formatINR(val);
+        }
+
+        // Helper: Update Slider Colors dynamically
+        function updateSliderGradient(slider, color) {
+            const min = parseFloat(slider.min) || 0;
+            const max = parseFloat(slider.max) || 100;
+            const value = parseFloat(slider.value) || 0;
+            const percentage = ((value - min) / (max - min)) * 100;
+            slider.style.background = `linear-gradient(to right, ${color} 0%, ${color} ${percentage}%, #1e293b ${percentage}%, #1e293b 100%)`;
+        }
+
+        // Calculate Future Value for SIP
+        function calcSIPNominal(monthlyP, annualRate, years) {
+            const n = years * 12;
+            const i = (annualRate / 100) / 12;
+            if (i === 0) return monthlyP * n;
+            return monthlyP * ((Math.pow(1 + i, n) - 1) / i) * (1 + i);
+        }
+
+        // Calculate Future Value for Lumpsum
+        function calcLumpsumNominal(principalP, annualRate, years) {
+            const r = annualRate / 100;
+            return principalP * Math.pow(1 + r, years);
+        }
+
+        // Main Calculation Engine
+        function calculate() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const returnRate = parseFloat(rateInput.value) || 0;
+            const years = parseFloat(yearsInput.value) || 0;
+            const inflationRate = parseFloat(inflationInput.value) || 0;
+
+            let totalInvested = 0;
+            let currentNominalFV = 0;
+            
+            let compareSipReal = 0;
+            let compareLumpsumReal = 0;
+
+            // 1. Compute Active Strategy
+            if (isSIP) {
+                totalInvested = amount * years * 12;
+                currentNominalFV = calcSIPNominal(amount, returnRate, years);
+
+                // Equivalent Lumpsum strategy runs on equivalent total sum invested at Day 1
+                const equivalentLumpsumNominal = calcLumpsumNominal(totalInvested, returnRate, years);
+                
+                compareSipReal = currentNominalFV / Math.pow(1 + (inflationRate / 100), years);
+                compareLumpsumReal = equivalentLumpsumNominal / Math.pow(1 + (inflationRate / 100), years);
+            } else {
+                totalInvested = amount;
+                currentNominalFV = calcLumpsumNominal(amount, returnRate, years);
+
+                // Equivalent SIP strategy runs on equivalent total sum divided across installments
+                const equivalentMonthlySip = totalInvested / (years * 12);
+                const equivalentSipNominal = calcSIPNominal(equivalentMonthlySip, returnRate, years);
+
+                compareLumpsumReal = currentNominalFV / Math.pow(1 + (inflationRate / 100), years);
+                compareSipReal = equivalentSipNominal / Math.pow(1 + (inflationRate / 100), years);
+            }
+
+            // Inflation adjusted real purchasing power
+            const realWealth = currentNominalFV / Math.pow(1 + (inflationRate / 100), years);
+            const inflationErosion = Math.max(0, currentNominalFV - realWealth);
+            const realGain = realWealth - totalInvested;
+
+            // DOM Metrics Update
+            metricInvested.innerText = formatINR(totalInvested);
+            metricNominal.innerText = formatINR(currentNominalFV);
+            metricErosion.innerText = `-` + formatINR(inflationErosion);
+            metricReal.innerText = formatINR(realWealth);
+
+            compSipReal.innerText = formatINR(compareSipReal);
+            compLumpsumReal.innerText = formatINR(compareLumpsumReal);
+
+            // Update mini progress share bar
+            const totalComp = compareSipReal + compareLumpsumReal;
+            if (totalComp > 0) {
+                barSipShare.style.width = `${(compareSipReal / totalComp) * 100}%`;
+                barLumpsumShare.style.width = `${(compareLumpsumReal / totalComp) * 100}%`;
+            }
+
+            // 2. Comparative Analysis Recommendation Logic
+            const diffAmount = Math.abs(compareLumpsumReal - compareSipReal);
+            const lowerVal = Math.min(compareSipReal, compareLumpsumReal);
+            const profitMarginPct = lowerVal > 0 ? ((diffAmount / lowerVal) * 100).toFixed(1) : 0;
+
+            if (compareLumpsumReal >= compareSipReal) {
+                recBadge.innerText = "Lumpsum Dominates";
+                recBadge.className = "px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-brand-500/20 text-brand-400 border border-brand-500/30";
+                recHeadline.innerText = `Lumpsum yields ${formatCompactINR(diffAmount)} higher real purchasing power.`;
+                recDescription.innerText = `Deploying the total sum on Day 1 allows 100% of capital to compound over the full ${years} years, beating installment-based SIP compounding under inflation.`;
+                recProfitMargin.innerText = `+${profitMarginPct}%`;
+                recDiffAmount.innerText = formatCompactINR(diffAmount);
+                recIcon.className = "fa-solid fa-sack-dollar text-brand-400 text-xl";
+                recIconBg.className = "w-12 h-12 rounded-2xl bg-brand-500/10 border border-brand-500/30 flex items-center justify-center flex-shrink-0";
+            } else {
+                recBadge.innerText = "SIP Dominates";
+                recBadge.className = "px-2 py-0.5 rounded-md text-[10px] font-extrabold bg-accent-500/20 text-accent-400 border border-accent-500/30";
+                recHeadline.innerText = `SIP strategy yields ${formatCompactINR(diffAmount)} higher real purchasing power.`;
+                recDescription.innerText = `Regular rupee-cost averaging mitigates timing risk and outpaces upfront lump-sum allocation under current rate parameters.`;
+                recProfitMargin.innerText = `+${profitMarginPct}%`;
+                recDiffAmount.innerText = formatCompactINR(diffAmount);
+                recIcon.className = "fa-solid fa-arrows-rotate text-accent-400 text-xl";
+                recIconBg.className = "w-12 h-12 rounded-2xl bg-accent-500/10 border border-accent-500/30 flex items-center justify-center flex-shrink-0";
+            }
+
+            // 3. Update Chart Visualizations
+            const realYieldRatio = currentNominalFV > 0 ? Math.round((realWealth / currentNominalFV) * 100) : 0;
+            chartRealRatio.innerText = `${realYieldRatio}%`;
+
+            legendInvested.innerText = formatCompactINR(totalInvested);
+            legendRealGain.innerText = formatCompactINR(Math.max(0, realGain));
+            legendErosion.innerText = formatCompactINR(inflationErosion);
+
+            updateCharts(totalInvested, Math.max(0, realGain), inflationErosion, returnRate, inflationRate, years, amount);
+
+            // Update slider fills
+            updateSliderGradient(amountSlider, '#10b981');
+            updateSliderGradient(rateSlider, '#6366f1');
+            updateSliderGradient(yearsSlider, '#a855f7');
+            updateSliderGradient(inflationSlider, '#ef4444');
+        }
+
+        // Initialize Charts
+        function initCharts() {
+            // 1. Doughnut Chart
+            const ctxDoughnut = document.getElementById('breakdownChart').getContext('2d');
+            breakdownChart = new Chart(ctxDoughnut, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Invested Capital', 'Real Net Gain', 'Inflation Erosion'],
+                    datasets: [{
+                        data: [4500000, 720000, 7280000],
+                        backgroundColor: ['#64748b', '#10b981', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '75%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.label + ': ' + formatINR(context.raw || 0);
+                                }
+                            }
+                        }
+                    },
+                    animation: { duration: 300 }
+                }
+            });
+
+            // 2. Growth Line Chart
+            const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+            growthChart = new Chart(ctxGrowth, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        {
+                            label: 'SIP Real Growth',
+                            data: [],
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2
+                        },
+                        {
+                            label: 'Lumpsum Real Growth',
+                            data: [],
+                            borderColor: '#6366f1',
+                            backgroundColor: 'rgba(99, 102, 241, 0.1)',
+                            fill: true,
+                            tension: 0.3,
+                            borderWidth: 2
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: { color: '#94a3b8', font: { size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ' ' + context.dataset.label + ': ' + formatINR(context.raw || 0);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            ticks: { color: '#64748b', font: { size: 10 } },
+                            grid: { color: '#1e293b' }
+                        },
+                        y: {
+                            ticks: { 
+                                color: '#64748b', 
+                                font: { size: 10 },
+                                callback: function(val) { return formatCompactINR(val); }
+                            },
+                            grid: { color: '#1e293b' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update Charts Data
+        function updateCharts(invested, realGain, erosion, returnRate, inflationRate, totalYears, currentAmt) {
+            // Update Doughnut
+            if (breakdownChart) {
+                breakdownChart.data.datasets[0].data = [invested, realGain, erosion];
+                breakdownChart.update();
+            }
+
+            // Compute year-by-year points for Growth Line Chart
+            if (growthChart) {
+                const labels = [];
+                const sipRealPoints = [];
+                const lumpsumRealPoints = [];
+
+                let totalCap = isSIP ? currentAmt * totalYears * 12 : currentAmt;
+                let monthlySipAmt = isSIP ? currentAmt : totalCap / (totalYears * 12);
+
+                for (let y = 1; y <= totalYears; y++) {
+                    labels.push(`Yr ${y}`);
+                    
+                    // SIP Real Value at Year y
+                    const sipNom = calcSIPNominal(monthlySipAmt, returnRate, y);
+                    const sipReal = sipNom / Math.pow(1 + (inflationRate / 100), y);
+                    sipRealPoints.push(sipReal);
+
+                    // Lumpsum Real Value at Year y
+                    const lumpNom = calcLumpsumNominal(totalCap, returnRate, y);
+                    const lumpReal = lumpNom / Math.pow(1 + (inflationRate / 100), y);
+                    lumpsumRealPoints.push(lumpReal);
+                }
+
+                growthChart.data.labels = labels;
+                growthChart.data.datasets[0].data = sipRealPoints;
+                growthChart.data.datasets[1].data = lumpsumRealPoints;
+                growthChart.update();
+            }
+        }
+
+        // Input Bindings
+        function bindSync(input, slider) {
+            input.addEventListener('input', () => {
+                slider.value = input.value;
+                calculate();
+            });
+            slider.addEventListener('input', () => {
+                input.value = slider.value;
+                calculate();
+            });
+        }
+
+        // Mode Switching
+        function setMode(sipMode) {
+            isSIP = sipMode;
+
+            if (isSIP) {
+                modeSipBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/20 flex items-center gap-1.5";
+                modeLumpsumBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-400 hover:text-white flex items-center gap-1.5";
+
+                calcTitle.innerText = "Systematic Investment Plan";
+                calcSubtitle.innerText = "Adjust variables to calculate SIP growth and inflation impact";
+                badgeMode.innerText = "SIP Active";
+                amountLabel.innerText = "Monthly SIP Amount";
+                minAmountLabel.innerText = "₹500";
+                maxAmountLabel.innerText = "₹5 Lakhs";
+
+                amountSlider.min = "500";
+                amountSlider.max = "500000";
+                amountSlider.step = "500";
+                
+                amountInput.value = 25000;
+                amountSlider.value = 25000;
+            } else {
+                modeLumpsumBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 bg-gradient-to-r from-brand-500 to-brand-600 text-white shadow-md shadow-brand-500/20 flex items-center gap-1.5";
+                modeSipBtn.className = "px-4 py-1.5 rounded-lg text-xs font-bold transition-all duration-200 text-slate-400 hover:text-white flex items-center gap-1.5";
+
+                calcTitle.innerText = "Lumpsum Investment";
+                calcSubtitle.innerText = "Adjust variables to calculate upfront investment real purchasing power";
+                badgeMode.innerText = "Lumpsum Active";
+                amountLabel.innerText = "Upfront Capital Amount";
+                minAmountLabel.innerText = "₹10,000";
+                maxAmountLabel.innerText = "₹1 Crore";
+
+                amountSlider.min = "10000";
+                amountSlider.max = "10000000";
+                amountSlider.step = "10000";
+
+                amountInput.value = 1000000;
+                amountSlider.value = 1000000;
+            }
+
+            calculate();
+        }
+
+        // On Load initialization
+        window.onload = function() {
+            initCharts();
+
+            bindSync(amountInput, amountSlider);
+            bindSync(rateInput, rateSlider);
+            bindSync(yearsInput, yearsSlider);
+            bindSync(inflationInput, inflationSlider);
+
+            modeSipBtn.addEventListener('click', () => setMode(true));
+            modeLumpsumBtn.addEventListener('click', () => setMode(false));
+
+            // Presets
+            document.querySelectorAll('.preset-year').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const yrs = e.target.getAttribute('data-years');
+                    yearsInput.value = yrs;
+                    yearsSlider.value = yrs;
+                    calculate();
+                });
+            });
+
+            // Tab view switch for chart
+            chartTabDoughnut.addEventListener('click', () => {
+                viewDoughnut.classList.remove('hidden');
+                viewGrowth.classList.add('hidden');
+                chartTabDoughnut.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-slate-800";
+                chartTabGrowth.className = "px-2.5 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white";
+            });
+
+            chartTabGrowth.addEventListener('click', () => {
+                viewGrowth.classList.remove('hidden');
+                viewDoughnut.classList.add('hidden');
+                chartTabGrowth.className = "px-2.5 py-1 rounded text-[11px] font-bold text-white bg-slate-800";
+                chartTabDoughnut.className = "px-2.5 py-1 rounded text-[11px] font-bold text-slate-400 hover:text-white";
+            });
+
+            // Initial calculate trigger
+            calculate();
+        };
+    </script>
+</body>
+</html>
